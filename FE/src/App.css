@@ -1,0 +1,17 @@
+.App {
+    text-align: center;
+  }
+  
+  .center {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .particles {
+    position: fixed; /*does not get scrolled (is in fixed position*/
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: -1; /*means that this will be 1 layer below other components (not overwrites them). Higher the level, more on top it will be*/
+  }
