@@ -9,44 +9,6 @@ import FaceRecognition from './components/FaceRecognition/FaceRecognition';
 import Signin from './components/Signin/Signin';
 import Register from './components/Register/Register';
 
-
-const returnClarifyRequestOptions = (imageUrl) => {
-    const PAT = '6b5531d9b2f14276a32e427457a4bb8c';
-    // Specify the correct user_id/app_id pairings
-    // Since you're making inferences outside your app's scope
-    const USER_ID = '4uf03bwvpmyq';
-    const APP_ID = 'my-first-application';
-    // Change these to whatever model and image URL you want to use
-    const IMAGE_URL = imageUrl;
-
-    const raw = JSON.stringify({
-        "user_app_id": {
-            "user_id": USER_ID,
-            "app_id": APP_ID
-        },
-        "inputs": [
-            {
-                "data": {
-                    "image": {
-                        "url": IMAGE_URL
-                    }
-                }
-            }
-        ]
-    });
-
-    const requestOptions = {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'Authorization': 'Key ' + PAT
-        },
-        body: raw
-    };
-
-    return requestOptions;
-}
-
 const initialState = {
     input: '',
     imageUrl: '',
@@ -95,11 +57,13 @@ class App extends Component {
 
     calculateFaceLocation = (result) => {
         const regions = result.outputs[0].data.regions;
+        console.log("regions BE: ", regions);
         const boxes = [];
 
         const image = document.getElementById('inputimage');
         const width = Number(image.width);
         const height = Number(image.height);
+        console.log("height: ", height)
 
         regions.forEach(region => {
 
@@ -124,22 +88,24 @@ class App extends Component {
 
     onButtonSubmit = () => {
         this.setState({ imageUrl: this.state.input });
-        fetch("https://api.clarifai.com/v2/models/face-detection/outputs", returnClarifyRequestOptions(this.state.input))
+        fetch('http://localhost:3000/image', {
+            method: 'put',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: this.state.user.id,
+                imageUrl: this.state.input
+            })
+        })
             .then(response => response.json())
             .then(result => {
+                console.log("result", result)
                 if (result) {
-                    fetch('http://localhost:3000/image', {
-                        method: 'put',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            id: this.state.user.id
-                        })
-                    })
-                        .then(response => response.json())
-                        .then(count => {
-                            this.setState(Object.assign(this.state.user, { entries: count }));
-                        })
-                        .catch(console.log)
+                    this.setState(prevState => ({
+                        user: {
+                            ...prevState.user,
+                            entries: parseInt(prevState.user.entries, 10) + 1,
+                        },
+                    }));
                 }
                 this.displayFaceBox(this.calculateFaceLocation(result));
             })
